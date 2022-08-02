@@ -3,7 +3,6 @@ import os
 import json
 from copy import deepcopy
 
-from pymongo import MongoClient
 from tqdm import tqdm
 
 if __name__ == "__main__":

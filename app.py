@@ -1,39 +1,41 @@
-import json
-import os
-from typing import List
+from fastapi import FastAPI
+import pandas as pd
 
-import numpy as np
-from fastapi import UploadFile, File, FastAPI, Form
-from pydantic import BaseModel
-import utils
+from db import get_best_augments, get_best_items, get_best_champions
+from models import SuggestRequest
 
 app = FastAPI(dependencies=[], debug=True)
 
-class Champion(BaseModel):
-    level:int
-    name:str
+augments_data = pd.read_csv("augments.csv")
+items_data = pd.read_csv("items.csv")
+champions_data = pd.read_csv("champions.csv")
 
 
-class SuggestRequest(BaseModel):
-    comp : List[Champion]
-
-with open("winner_comps.json") as fp:
-    winner_comps = json.load(fp)
-
-all_winner_comps = np.array([comp_array for comp_array,_ in winner_comps])
+@app.post("/champions")
+async def get_champions(request: SuggestRequest):
+    return {
+        "champions": get_best_champions(request)
+    }
 
 
-class SuggestResponse(BaseModel):
-    comp_key : str
-    items: List[str]
+@app.post("/items")
+def get_items(request: SuggestRequest):
+    return {
+        "items": get_best_items(request)
+    }
+
+
+@app.post("/augments")
+async def get_augments(request: SuggestRequest):
+    return {
+        "augments": get_best_augments(request)
+    }
 
 
 @app.post("/suggest")
-async def get_suggest(suggest_request : SuggestRequest):
-
-    comp = suggest_request.comp
-    comp_array = utils.get_comp_array(comp)
-    arr = np.array(comp_array)
-
-    argmax = np.abs(all_winner_comps-arr).sum(axis=1).argmin()
-    comp_key = winner_comps[argmax][1]
+async def get_suggest(request: SuggestRequest):
+    return {
+        "champions": get_best_champions(request),
+        "items": get_best_items(request),
+        "augments": get_best_augments(request)
+    }
